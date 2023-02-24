@@ -2,7 +2,7 @@ from ximea import xiapi
 import cv2
 import os
 import numpy as np
-img_path = 'img1/'
+
 ### runn this command first echo 0|sudo tee /sys/module/usbcore/parameters/usbfs_memory_mb  ###
 
 # create instance for first connected camera
@@ -29,52 +29,44 @@ print('Starting data acquisition...')
 cam.start_acquisition()
 
 i = 0
+images = np.zeros([4, 240, 240, 4], dtype=np.uint8) # Obrazky sa budu ukladat tu, nie do suboru
 while cv2.waitKey() != ord('q'):
     cam.get_image(img)
     image = img.get_image_data_numpy()
     image = cv2.resize(image, (240, 240))
-    cv2.imshow("test", image)
+    images[i, :, :, :] = image
+    cv2.imshow("scanning...", image)
     cv2.waitKey(2000)
-    cv2.imwrite(os.path.join(img_path, 'image' + str(i) + '.jpg'), image)
     i += 1
     if i == 4:
         break
 
-# for i in range(3):
-#     img_pth = 'img1/image' + str(i) + '.jpg'
-#     img = cv2.imread(img_pth)
-#     wname = 'img' + str(i)
-#     cv2.imshow(wname, img)
-#
-# cv2.waitKey()
-# cv2.destroyAllWindows()
+# Vytvorenie mozaiky 
+original_mosaic = np.vstack((np.hstack((images[0, :, :, :], images[1, :, :, :])),
+                             np.hstack((images[2, :, :, :], images[-1, :, :, :]))))
 
-# Filter uloha 1
-img_pth = 'img1/image0.jpg'
-img = cv2.imread(img_pth)
-wname = 'img0'
-wname1 = 'filter'
+# Filter - uloha 1
 kernel = np.ones((3, 3), np.float32) / 25
-dst = cv2.filter2D(img, -1, kernel)
-cv2.imshow(wname, img)
-cv2.imshow(wname1, dst)
+dst = cv2.filter2D(images[0, :, :, :], -1, kernel)
 
-cv2.waitKey()
-cv2.destroyAllWindows()
+# Otocenie o 90 stupnov - uloha 2
+for i in range(images.shape[-1]):
+    images[1, :, :, i] = np.rot90(images[1, :, :, i])
 
-# Otocenie o 90 stupnov
-# img2 = cv2.imread('img1/image1.jpg')
+# Zobrazenie iba R kanalu - uloha 3
+images[2, :, :, 0] = 0
+images[2, :, :, 1] = 0
 
+# Modifikovana mozaika
+modif_mosaic = np.vstack((np.hstack((images[0, :, :, :], images[1, :, :, :])),
+                          np.hstack((images[2, :, :, :], images[-1, :, :, :]))))
 
-# Zobrazenie iba R kanalu
-wname2 = 'rkanal'
-img3 = cv2.imread('img1/image2.jpg')
-img3[:,:,0] = 0
-img3[:,:,1] = 0
-cv2.imshow(wname2, img3)
+# Vykreslenie orig. a modif. mozaiky
 
-cv2.waitKey()
-cv2.destroyAllWindows()
+cv2.imshow("Originalna mozaika", original_mosaic)
+cv2.imshow("Modifikovana mozaika", modif_mosaic)
+
+cv2.waitKey(100000)
 
 # stop data acquisition
 print('Stopping acquisition...')
