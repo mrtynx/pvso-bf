@@ -1,9 +1,5 @@
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib
-
-matplotlib.use("TkAgg")
 
 
 def conv2d(image, kernel, padding=False):
@@ -81,29 +77,38 @@ def non_max_suppression(grad, angle):
     return output
 
 
-def threshold(img, low=0.05, high=0.09):
-    high = img.max() * high
-    low = high * low
-
+def double_threshold(img, low, high):
     img = np.array(img)
     output = np.zeros_like(img)
 
     output[img >= high] = 255
-    output[(img >= low) & (img <= high)] = 25
+    output[(img > low) & (img < high)] = 25
 
     return output
 
 
-if __name__ == "__main__":
-    img = cv2.imread("img/building.jpg")
-    img_gray = np.asarray(cv2.resize(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY), (512, 512)))
-    sobel = sobel(img_gray)
-    rounded = round_angle(sobel[1])
-    # plt.imshow(threshold(non_max_suppression(sobel[0], rounded)), cmap='gray')
-    # plt.show()
-    p = non_max_suppression(sobel[0], rounded)
-    k = threshold(p)
+def edge_tracking(img):
+    strong = img.max()
+    weak = img.min()
+    output = np.zeros_like(img)
+    for i in range(1, output.shape[0] - 1):
+        for j in range(1, output.shape[1] - 1):
+            if img[i, j] == weak:
+                edge_area = img[i - 1:i + 2, j - 1:j + 2]
+                if strong in edge_area:
+                    output[i, j] = strong
+                else:
+                    output[i, j] = 0
+    return output
 
-    plt.imshow(k, cmap='gray')
-    plt.show()
-# %%
+
+def canny_edge_detect(img, threshold_low=10, threshold_high=200, hysteresis=False):
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    grad, angle = sobel(gray)
+    angle = round_angle(angle)
+    grad = non_max_suppression(grad, angle)
+    out = double_threshold(grad, threshold_low, threshold_high)
+    if hysteresis:
+        return edge_tracking(out)
+    else:
+        return out
