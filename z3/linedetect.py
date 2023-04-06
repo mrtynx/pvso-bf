@@ -2,15 +2,15 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
-from canny import canny_edge_detect
-from hough_transform import hough_lines, plot_lines
+from z3.canny import canny_edge_detect
+from z3.hough_transform import hough_lines, plot_lines, get_lines
 
 
 if __name__ == "__main__":
-    img = np.asarray(cv2.resize(cv2.imread("img/building.jpg"), (512, 512)))
-    canny = canny_edge_detect(img, threshold_low=40, threshold_high=170, hysteresis=False)
+    img = np.asarray(cv2.resize(cv2.imread("img/building.jpg"), (256, 256)))
+    canny = canny_edge_detect(img, threshold_low=60, threshold_high=170, hysteresis=False)
 
-    lines = hough_lines(canny, threshold=60, rel_tol=0.09)
+    lines = hough_lines(canny, threshold=80, rel_tol=0.09)
 
     fig, axes = plt.subplots(nrows=1, ncols=2)
 
@@ -24,3 +24,4 @@ if __name__ == "__main__":
     plt.show()
 
     plot_lines(img, *lines)
+

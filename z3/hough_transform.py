@@ -3,7 +3,10 @@ import matplotlib
 import numpy as np
 import matplotlib.pyplot as plt
 
-matplotlib.use("TkAgg")
+from numba import jit
+
+matplotlib.use("Qt5Agg")
+
 
 
 def hough_intersect(img):
@@ -18,6 +21,7 @@ def hough_intersect(img):
                     r = j * np.cos(thetas[k]) + i * np.sin(thetas[k])
                     accumulator[int(r) + diag, k] += 1
     return accumulator, thetas, rs
+
 
 
 def remove_close_duplicates(idxs, rel_tol):
@@ -54,6 +58,18 @@ def polar_to_slope(rho, theta):
     return a, b
 
 
+def get_lines(rhos, thetas, space):
+    if len(rhos) != len(thetas):
+        raise ValueError("Input arrays must have the same length")
+
+    lines = []
+    x = np.linspace(0, space)
+    for i in range(len(thetas)):
+        a, b = polar_to_slope(rhos[i], thetas[i])
+        lines.append(a * x + b)
+    return lines
+
+
 def plot_lines(img, rhos, thetas):
     if len(rhos) != len(thetas):
         raise ValueError("Input arrays must have the same length")
@@ -76,5 +92,3 @@ def hough_lines(img, threshold, rel_tol=0.1):
     thetas = np.rad2deg(thetas[idxs_thetas])
 
     return rhos, thetas
-
-

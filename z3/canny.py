@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 
+from numba import jit
+
 
 def conv2d(image, kernel, padding=False):
     output = np.zeros_like(image)
@@ -24,12 +26,12 @@ def sobel(image):
 
     grad = np.zeros_like(image)
     angle = np.zeros_like(image)
-    image = conv2d(image, gaussian_blur, padding=True)
+    img = conv2d(image, gaussian_blur, padding=True)
 
     for i in range(1, grad.shape[0] - 1):
         for j in range(1, grad.shape[1] - 1):
-            gx = np.sum(sobel_x * image[i - 1: i + 2, j - 1: j + 2])
-            gy = np.sum(sobel_y * image[i - 1: i + 2, j - 1: j + 2])
+            gx = np.sum(sobel_x * img[i - 1: i + 2, j - 1: j + 2])
+            gy = np.sum(sobel_y * img[i - 1: i + 2, j - 1: j + 2])
             grad[i, j] = np.sqrt(gx ** 2 + gy ** 2)
             angle[i, j] = np.arctan2(gy, gx) * 180 / np.pi
 
